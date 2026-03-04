@@ -196,13 +196,21 @@ class HybridSpotifyScanner:
             conn, cursor = self._get_db()
             today = datetime.now().strftime('%Y-%m-%d')
             count = 0
-            for row in rows:
+            for i, row in enumerate(rows, 1): # i will act as position
                 cols = row.find_all('td')
-                if len(cols) < 3: continue
+                if len(cols) < 2: continue
                 
-                pos = self._safe_int(cols[0].text.strip())
-                name = cols[1].text.strip()
-                total = self._safe_int(cols[2].text.strip())
+                # kworb artists table: Index 0 is Name, Index 1 is Total Streams (in millions e.g. 128,454.8)
+                pos = i
+                name = cols[0].text.strip()
+                
+                # Streams are in millions, need to convert text like '128,454.8' to actual numbers
+                raw_total = cols[1].text.strip()
+                try:
+                    total_millions = float(raw_total.replace(',', ''))
+                    total = int(total_millions * 1000000)
+                except:
+                    total = self._safe_int(raw_total)
                 
                 if total > 0:
                     cursor.execute('''
