@@ -38,9 +38,9 @@ class HybridSpotifyScanner:
         region_code = 'global' if region == 'global' else 'us'
         market_id = f"weekly_song_{region_code}"
         
-        print(f"[*] 解析 Spotify 官方图表 {region} 周榜...", flush=True)
+        print(f"[*] 解析 Spotify 官方图表 {region} 日榜 (用于预测周榜)...", flush=True)
         try:
-            url = f"https://charts.spotify.com/charts/view/regional-{region_code}-weekly/latest"
+            url = f"https://charts.spotify.com/charts/view/regional-{region_code}-daily/latest"
             res = requests.get(url, headers=self.headers, timeout=15)
             res.encoding = 'utf-8'
             
@@ -101,8 +101,8 @@ class HybridSpotifyScanner:
         """备用方案: 抓取 kworb"""
         region_code = 'global' if region == 'global' else 'us'
         market_id = f"weekly_song_{region_code}"
-        print(f"[*] 启用备用方案抓取 Kworb {region} 周榜...", flush=True)
-        url = f"https://kworb.net/spotify/country/{region_code}_weekly.html"
+        print(f"[*] 启用备用方案抓取 Kworb {region} 日榜...", flush=True)
+        url = f"https://kworb.net/spotify/country/{region_code}_daily.html"
         try:
             res = requests.get(url, headers=self.headers, timeout=15)
             res.encoding = 'utf-8'
@@ -121,19 +121,10 @@ class HybridSpotifyScanner:
 
                 full_name = cols[2].text.strip()
                 artist, track = full_name.split(" - ", 1) if " - " in full_name else ("Unknown", full_name)
-                
-                # 寻找真实的周流值
+                # Daily chart columns: Index 6 is Daily Streams, Index 8 is 7-Day Streams (Use 6)
                 weekly_streams = 0
-                for col in cols[3:]:
-                    val = self._safe_int(col.text)
-                    if (region == 'global' and 5000000 < val < 200000000) or \
-                       (region == 'us' and 1000000 < val < 50000000):
-                        weekly_streams = val
-                        break
-                
-                # 如果没找到合适的，就用第5列（通常是周流值所在列）
-                if weekly_streams == 0 and len(cols) > 5:
-                    weekly_streams = self._safe_int(cols[5].text)
+                if len(cols) > 6:
+                    weekly_streams = self._safe_int(cols[6].text)
 
                 cursor.execute('''
                     INSERT OR REPLACE INTO spotify_charts (date, region, position, track_name, artist, streams)
