@@ -7,4 +7,3 @@ pandas
 numpy
 groq
 python-dotenv
-sqlite3
