@@ -24,7 +24,7 @@ class SpotifyScanner:
         self.db_path = os.path.join(os.path.dirname(__file__), '../../data/polymusic.db')
 
     def fetch_artists(self):
-        """Scrapes the Top Artists chart."""
+        """Scrapes the Top Artists chart with robust number parsing."""
         url = "https://kworb.net/spotify/artists.html"
         headers = {"User-Agent": "Mozilla/5.0"}
         print(f"[*] Scraping Top Artists...")
@@ -42,7 +42,12 @@ class SpotifyScanner:
                 cols = row.find_all('td')
                 if len(cols) < 3: continue
                 name = cols[0].text.strip()
-                streams = int(cols[2].text.strip().replace(',', ''))
+                # Use regex to extract only the numeric part, handling things like 50.170 or commas
+                stream_text = cols[2].text.strip()
+                # Remove everything except digits
+                clean_streams = re.sub(r'[^\d]', '', stream_text)
+                streams = int(clean_streams) if clean_streams else 0
+                
                 cursor.execute('''
                     INSERT OR REPLACE INTO spotify_charts (date, region, position, track_name, artist, streams)
                     VALUES (?, ?, ?, ?, ?, ?)
@@ -50,10 +55,10 @@ class SpotifyScanner:
             conn.commit()
             conn.close()
         except Exception as e:
-            print(f"Error artist scrape: {e}")
+            print(f"[!] Error artist scrape: {e}")
 
     def fetch_and_save(self):
-        """Scrapes tracks with region/type context."""
+        """Scrapes tracks with region/type context and robust number parsing."""
         headers = {"User-Agent": "Mozilla/5.0"}
         category = f"{self.region_code}_{self.chart_type}"
         print(f"[*] Scraping {category} charts...")
@@ -61,7 +66,9 @@ class SpotifyScanner:
             response = requests.get(self.base_url, headers=headers, timeout=15)
             soup = BeautifulSoup(response.text, 'html.parser')
             table = soup.find('table', {'class': 'sortable'})
-            if not table: return False
+            if not table: 
+                print(f"[!] No table found for {category}")
+                return False
             rows = table.find_all('tr')[1:101] # Top 100 for variety
             
             today_str = datetime.now().strftime('%Y-%m-%d')
@@ -70,10 +77,20 @@ class SpotifyScanner:
             for row in rows:
                 cols = row.find_all('td')
                 if len(cols) < 5: continue
-                pos = int(cols[0].text.strip())
+                
+                pos_text = re.sub(r'[^\d]', '', cols[0].text.strip())
+                pos = int(pos_text) if pos_text else 0
+                
                 full_name = cols[2].text.strip()
                 artist, track = full_name.split(" - ", 1) if " - " in full_name else ("Unknown", full_name)
-                streams = int(cols[5].text.strip().replace(',', '')) if len(cols)>5 else 0
+                
+                # Robust streams parsing: remove decimals and non-digit characters (like multipliers)
+                stream_text = cols[5].text.strip() if len(cols) > 5 else "0"
+                # If it's a daily chart, kworb sometimes has '(x4)' etc.
+                # We only want the total streams number
+                clean_streams = re.sub(r'[^\d]', '', stream_text.split('(')[0]) # Ignore multipliers in parens
+                streams = int(clean_streams) if clean_streams else 0
+
                 cursor.execute('''
                     INSERT OR REPLACE INTO spotify_charts (date, region, position, track_name, artist, streams)
                     VALUES (?, ?, ?, ?, ?, ?)
@@ -82,7 +99,7 @@ class SpotifyScanner:
             conn.close()
             return True
         except Exception as e:
-            print(f"Error scrape {category}: {e}")
+            print(f"[!] Error scrape {category}: {e}")
             return False
 
 if __name__ == "__main__":
