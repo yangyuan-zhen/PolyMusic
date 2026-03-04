@@ -1,74 +1,67 @@
-# 🎵 PolyMusic: Quant Intelligence for Music Markets
+# PolyMusic 🎵
 
-PolyMusic is an independent quantitative analysis system designed to gain a decision-making edge in music prediction markets (e.g., PolyMarket). It aggregates real-time streaming data from Spotify, social signals from TikTok/YouTube, and industry events to provide deep market insights.
+A real-time quantitative dashboard designed explicitly to track specific Spotify music metrics related to Polymarket cryptocurrency prediction markets.
 
-![License](https://img.shields.io/badge/license-MIT-green)
-![Python](https://img.shields.io/badge/python-3.11%2B-blue)
-![AI](https://img.shields.io/badge/AI-LLaMA%203.3%2070B-orange)
+![Dashboard Overview](docs/dashboard.png)
 
-## 🚀 Key Features
+## Why PolyMusic?
 
-- **Spotify Chart Scanner**: High-speed scraping of Global/US/UK Top 200 charts via kworb.net.
-- **Quant Engines**:
-  - **Accumulation Solver**: Calculates the "Stream Gap" required to flip rankings in weekly charts.
-  - **Decay Controller**: Analyzes the half-life of trends to distinguish between "Spikes" and "Sustainable Hits."
-- **AI Analytics (LLaMA 3.3 70B)**: Processes multi-source signals using a P0/P1/P2 framework to identify mispriced market opportunities.
-- **Premium Dashboard**: A high-end web interface with Glassmorphism aesthetics for real-time monitoring.
-- **Docker Ready**: One-click deployment to any VPS.
+Polymarket music charts are highly specific about how they resolve their markets. This tool bridges the gap between active Polymarket outcomes and actual streaming data:
 
-## 🛠️ Tech Stack
+1. **Song Markets (#1 Global / #1 US)**: Resolves using the official Spotify API `open.spotify.com`. Because players bet on the _upcoming_ weekly outcomes, PolyMusic tracks the **Daily Real-Time Streams (Live)** straight from the bleeding-edge Next.js injection on `charts.spotify.com` to project the eventual weekly winner precisely.
+2. **Artist Markets (March Top Artist & 2026 Total)**: Resolves specifically utilizing Kworb data (`kworb.net/spotify/listeners.html` and `kworb.net/spotify/artists.html`). PolyMusic automatically falls back to these specific Kworb pages to provide 100% resolution-source accuracy.
 
-- **Backend**: Python 3.11, FastAPI
-- **Database**: SQLite
-- **AI Engine**: Groq SDK (LLaMA 3.3 70B)
-- **Deployment**: Docker, Docker Compose
-- **Design**: Vanilla CSS with Glassmorphism effects
+## 🎯 Target Polymarket Markets
 
-## 📦 Quick Start
+Currently tracking 5 active dimensions:
 
-### 1. Prerequisite
+- #1 song on Spotify this week? (Global)
+- #1 song on US Spotify this week? (US)
+- Top Spotify Artist in March?
+- #2 Spotify Artist in March?
+- Top Spotify Artist 2026
 
-- Python 3.11+ or Docker
-- [Groq API Key](https://console.groq.com/)
+## 🚀 Deployment
 
-### 2. Configuration
+We provide a streamlined one-click deployment script using Docker Compose that seamlessly manages the data scrapers, SQLite database, and the web server.
 
-Create a `.env` file in the root directory:
+### Prerequisites
 
-```env
-GROQ_API_KEY=your_groq_key_here
-```
+- Docker & Docker Compose
+- Git
 
-### 3. Running with Docker (Recommended)
+### Quick Setup (VPS / Linux Environment)
 
 ```bash
-docker-compose up -d --build
+git clone https://github.com/yangyuan-zhen/PolyMusic.git
+cd PolyMusic
+
+# Run the automated build and deployment script
+chmod +x deploy.sh
+./deploy.sh
 ```
 
-Access the dashboard at: `http://localhost:8000`
+This script will automatically pull the latest codebase, clean up old non-compatible SQL databases, and boot up the FastAPI and Scraper containers.
 
-### 4. Running Locally
+### Access the Dashboard
+
+Navigate to `http://<your-server-ip>:8001` (or localhost:8000 if running locally without docker).
+The application will silently scrape and synchronize the latest data every 6 hours to keep the dashboard constantly updated.
+
+## 🛠 Tech Stack
+
+- **Backend/Scraping**: Python 3.10+, BeautifulSoup4, Requests
+- **Database**: SQLite3
+- **Web App**: FastAPI, Jinja2 Templates
+- **Containerization**: Docker & Docker Compose
+
+## Development
+
+To run this application locally without Docker:
 
 ```bash
 pip install -r requirements.txt
-python bot_listener.py  # Run analysis engine
-python web/main.py      # Start dashboard
+uvicorn web.main:app --host 0.0.0.0 --port 8000 --reload
+# In a separate terminal, start the background listener:
+python bot_listener.py
 ```
-
-## 📂 Project Structure
-
-```text
-PolyMusic/
-├── src/
-│   ├── data/            # Scrapers & DB logic
-│   ├── analysis/        # Quant algorithms
-│   └── ai/              # LLaMA prompt engine
-├── web/                 # FastAPI dashboard & UI
-├── data/                # Local SQLite storage
-├── bot_listener.py      # Main pipeline entry
-└── Dockerfile
-```
-
-## 📄 License
-
-This project is licensed under the MIT License.
