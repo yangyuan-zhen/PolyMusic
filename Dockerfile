@@ -25,5 +25,5 @@ COPY . .
 # Create data directory for SQLite
 RUN mkdir -p data
 
-# Start bot in background and web server in foreground
-CMD python bot_listener.py & uvicorn web.main:app --host 0.0.0.0 --port 8000
+# Start bot in background and web server in foreground (Unbuffered logs)
+CMD python -u bot_listener.py & uvicorn web.main:app --host 0.0.0.0 --port 8000

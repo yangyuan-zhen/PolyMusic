@@ -39,7 +39,11 @@ def run_quant_report(market_context):
     """
     运行完整的市场量化分析报告（并行抓取版）。
     """
-    print(f"--- PolyMusic 并行抓取启动: {market_context} ---")
+    print(f"--- PolyMusic 并行抓取启动: {market_context} ---", flush=True)
+    
+    # 获取绝对路径，防止目录混淆
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    db_path = os.path.join(base_dir, 'data', 'polymusic.db')
     
     # 1. 定义抓取任务
     scanners = [
@@ -51,21 +55,20 @@ def run_quant_report(market_context):
     
     # 2. 并行执行抓取
     start_time = time.time()
+    print("[*] 正在并行抓取 5 个榜单维度...", flush=True)
     with ThreadPoolExecutor(max_workers=5) as executor:
-        # 提交榜单抓取任务
         futures = [executor.submit(s.fetch_and_save) for s in scanners]
-        # 提交艺人抓取任务
         futures.append(executor.submit(SpotifyScanner().fetch_artists))
         
-        # 等待所有任务完成
         for future in futures:
-            future.result()
+            try:
+                future.result()
+            except Exception as e:
+                print(f"[!] 某个抓取线程执行出错: {e}", flush=True)
             
-    print(f"[*] 所有数据抓取完成，耗时: {time.time() - start_time:.2f}秒")
+    print(f"[*] 所有数据抓取及入库完成，耗时: {time.time() - start_time:.2f}秒", flush=True)
     
-    # 3. 提取分析数据 (以全球周榜为例)
-    # 使用相对路径确保 Docker 内外一致
-    db_path = os.path.join(os.path.dirname(__file__), 'data/polymusic.db')
+    # 3. 提取分析数据
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute("SELECT track_name, artist, streams FROM spotify_charts WHERE region = 'ww_weekly' AND position <= 3 ORDER BY position ASC")
