@@ -4,8 +4,12 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import os
 import sqlite3
+from src.data.database import init_db
 
 app = FastAPI()
+
+# Ensure DB and tables exist on startup
+init_db()
 
 # Setup templates and static files
 # We'll use a simple structure for now, injecting into the 'web' folder

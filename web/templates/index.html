@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <link rel="stylesheet" href="/static/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 </head>
+
 <body>
     <div class="glass-container">
         <header>
@@ -41,18 +43,24 @@
                             </thead>
                             <tbody>
                                 {% if charts %}
-                                    {% for row in charts %}
-                                    <tr>
-                                        <td>{{ row[4] }}</td>
-                                        <td class="track-name">{{ row[1] }}</td>
-                                        <td>{{ row[2] }}</td>
-                                        <td class="streams">{{ "{:,}".format(row[3]) }}</td>
-                                    </tr>
-                                    {% endfor %}
+                                {% for row in charts %}
+                                <tr>
+                                    <td>{{ row[4] }}</td>
+                                    <td class="track-name">{{ row[1] }}</td>
+                                    <td>{{ row[2] }}</td>
+                                    <td class="streams">
+                                        {% if row[3] %}
+                                        {{ "{:,}".format(row[3]) }}
+                                        {% else %}
+                                        --
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
                                 {% else %}
-                                    <tr>
-                                        <td colspan="4" class="empty">Scanning for data...</td>
-                                    </tr>
+                                <tr>
+                                    <td colspan="4" class="empty">Scanning for data...</td>
+                                </tr>
                                 {% endif %}
                             </tbody>
                         </table>
@@ -64,7 +72,9 @@
                         <h3>Quant Indicators</h3>
                         <div class="indicator">
                             <span>Weekly Overtake Potential</span>
-                            <div class="progress-bar"><div class="fill" style="width: 75%"></div></div>
+                            <div class="progress-bar">
+                                <div class="fill" style="width: 75%"></div>
+                            </div>
                         </div>
                         <div class="indicator">
                             <span>Viral Momentum</span>
@@ -74,7 +84,9 @@
 
                     <div class="card ai-card">
                         <h3>AI Market Insight</h3>
-                        <p class="ai-text">Current markets show undervaluation in long-tail hits with high TikTok velocity. LLaMA recommended: Accumulate 'Contender' assets before Thursday's peak signal.</p>
+                        <p class="ai-text">Current markets show undervaluation in long-tail hits with high TikTok
+                            velocity. LLaMA recommended: Accumulate 'Contender' assets before Thursday's peak signal.
+                        </p>
                         <div class="confidence">Confidence: 88%</div>
                     </div>
                 </div>
@@ -84,4 +96,5 @@
 
     <div class="bg-gradient"></div>
 </body>
+
 </html>
