@@ -25,4 +25,4 @@ COPY . .
 RUN mkdir -p data
 
 # Use a simple wrapper to run both background tasks and the web server
-CMD ["sh", "-c", "python bot_listener.py & python web/main.py"]
+CMD ["sh", "-c", "python bot_listener.py & exec python web/main.py"]
