@@ -33,26 +33,40 @@ def send_telegram_message(text):
     except Exception as e:
         print(f"[!] Failed to send Telegram: {e}")
 
+from concurrent.futures import ThreadPoolExecutor
+
 def run_quant_report(market_context):
     """
-    运行完整的市场量化分析报告。
+    运行完整的市场量化分析报告（并行抓取版）。
     """
-    print(f"--- PolyMusic Report for: {market_context} ---")
+    print(f"--- PolyMusic 并行抓取启动: {market_context} ---")
     
-    # 1. 抓取多维度数据
-    # Global Daily
-    SpotifyScanner(region='global', chart_type='daily').fetch_and_save()
-    # US Daily
-    SpotifyScanner(region='us', chart_type='daily').fetch_and_save()
-    # Global Weekly
-    SpotifyScanner(region='global', chart_type='weekly').fetch_and_save()
-    # US Weekly
-    SpotifyScanner(region='us', chart_type='weekly').fetch_and_save()
-    # Top Artists
-    SpotifyScanner().fetch_artists()
+    # 1. 定义抓取任务
+    scanners = [
+        SpotifyScanner(region='global', chart_type='daily'),
+        SpotifyScanner(region='us', chart_type='daily'),
+        SpotifyScanner(region='global', chart_type='weekly'),
+        SpotifyScanner(region='us', chart_type='weekly')
+    ]
     
-    # 2. 提取分析数据 (以全球周榜为例)
-    conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/polymusic.db'))
+    # 2. 并行执行抓取
+    start_time = time.time()
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        # 提交榜单抓取任务
+        futures = [executor.submit(s.fetch_and_save) for s in scanners]
+        # 提交艺人抓取任务
+        futures.append(executor.submit(SpotifyScanner().fetch_artists))
+        
+        # 等待所有任务完成
+        for future in futures:
+            future.result()
+            
+    print(f"[*] 所有数据抓取完成，耗时: {time.time() - start_time:.2f}秒")
+    
+    # 3. 提取分析数据 (以全球周榜为例)
+    # 使用相对路径确保 Docker 内外一致
+    db_path = os.path.join(os.path.dirname(__file__), 'data/polymusic.db')
+    conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute("SELECT track_name, artist, streams FROM spotify_charts WHERE region = 'ww_weekly' AND position <= 3 ORDER BY position ASC")
     top_3 = cursor.fetchall()
