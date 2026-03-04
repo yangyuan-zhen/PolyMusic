@@ -39,7 +39,7 @@ def get_market_data():
     # 市场 2: 全球周榜歌曲
     cursor.execute("""
         SELECT position, track_name, artist, streams 
-        FROM spotify_charts WHERE region = 'weekly_song_ww' 
+        FROM spotify_charts WHERE region = 'weekly_song_global' 
         ORDER BY position ASC LIMIT 10
     """)
     data['global_weekly'] = cursor.fetchall()

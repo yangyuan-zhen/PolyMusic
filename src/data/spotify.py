@@ -32,7 +32,7 @@ class SpotifyScanner:
     # ========================================================
     def fetch_weekly_songs(self, region='global'):
         """抓取周榜歌曲 Top 10"""
-        region_code = 'ww' if region == 'global' else 'us'
+        region_code = 'global' if region == 'global' else 'us'
         url = f"https://kworb.net/spotify/country/{region_code}_weekly.html"
         market_id = f"weekly_song_{region_code}"
         
