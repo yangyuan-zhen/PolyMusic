@@ -62,15 +62,17 @@ def get_market_data():
     return data
 
 def run_market_analysis():
-    print("\n🎯 开始抓取精准博弈情报...", flush=True)
+    print("\n🎯 开始抓取精准博弈数据...", flush=True)
     scanner = SpotifyScanner()
-    # 抓取所有 4 个维度
-    scanner.fetch_weekly_songs('global')
-    scanner.fetch_weekly_songs('us')
-    scanner.fetch_monthly_listeners()
-    scanner.fetch_top_artists()
+    scanner.fetch_all_markets()
 
     data = get_market_data()
+    
+    # Debug print some values to log
+    print(f"DEBUG: Global Weekly Top: {data['global_weekly'][:2] if data['global_weekly'] else 'EMPTY'}", flush=True)
+    print(f"DEBUG: US Weekly Top: {data['us_weekly'][:2] if data['us_weekly'] else 'EMPTY'}", flush=True)
+    print(f"DEBUG: Monthly Rank: {data['monthly_rank'][:2] if data['monthly_rank'] else 'EMPTY'}", flush=True)
+    print(f"DEBUG: Total Rank: {data['total_rank'][:2] if data['total_rank'] else 'EMPTY'}", flush=True)
     report = ["🏆 *PolyMusic 精准博弈报告*\n"]
 
     # 全球歌曲市场分析
