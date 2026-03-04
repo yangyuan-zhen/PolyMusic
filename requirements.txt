@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+requests
+beautifulsoup4
+selenium
+pandas
+numpy
+groq
+python-dotenv
+sqlite3
