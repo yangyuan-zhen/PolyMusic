@@ -7,78 +7,82 @@ import re
 
 class SpotifyScanner:
     """
-    Spotify Top 200 Chart Scraper focusing on kworb.net for high-speed, non-blocked access.
+    Enhanced Spotify Chart Scraper for Multiple Regions, Types and Artists.
     """
-    def __init__(self, region='global'):
-        # kworb regions: 'ww' (global), 'us', 'gb', etc.
-        self.region_map = {'global': 'ww', 'us': 'us', 'uk': 'gb'}
+    def __init__(self, region='global', chart_type='daily'):
+        # regions: 'global' -> 'ww', 'us' -> 'us'
+        # types: 'daily', 'weekly'
+        self.region_map = {'global': 'ww', 'us': 'us'}
         self.region_code = self.region_map.get(region, 'ww')
-        self.base_url = f"https://kworb.net/spotify/country/{self.region_code}_daily.html"
+        self.chart_type = chart_type
+        
+        if chart_type == 'weekly':
+            self.base_url = f"https://kworb.net/spotify/country/{self.region_code}_weekly.html"
+        else:
+            self.base_url = f"https://kworb.net/spotify/country/{self.region_code}_daily.html"
+            
         self.db_path = os.path.join(os.path.dirname(__file__), '../../data/polymusic.db')
 
+    def fetch_artists(self):
+        """Scrapes the Top Artists chart."""
+        url = "https://kworb.net/spotify/artists.html"
+        headers = {"User-Agent": "Mozilla/5.0"}
+        print(f"[*] Scraping Top Artists...")
+        try:
+            res = requests.get(url, headers=headers, timeout=15)
+            soup = BeautifulSoup(res.text, 'html.parser')
+            table = soup.find('table', {'class': 'sortable'})
+            rows = table.find_all('tr')[1:21] # Top 20 artists
+            
+            conn = sqlite3.connect(self.db_path)
+            cursor = conn.cursor()
+            today = datetime.now().strftime('%Y-%m-%d')
+            
+            for row in rows:
+                cols = row.find_all('td')
+                if len(cols) < 3: continue
+                name = cols[0].text.strip()
+                streams = int(cols[2].text.strip().replace(',', ''))
+                cursor.execute('''
+                    INSERT OR REPLACE INTO spotify_charts (date, region, position, track_name, artist, streams)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                ''', (today, 'top_artist', 0, 'ARTIST_ENTRY', name, streams))
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            print(f"Error artist scrape: {e}")
+
     def fetch_and_save(self):
-        """
-        Scrapes kworb.net and saves the data to the local SQLite database.
-        """
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-        }
-        
-        print(f"[*] Scraping Spotify {self.region_code} charts from kworb...")
+        """Scrapes tracks with region/type context."""
+        headers = {"User-Agent": "Mozilla/5.0"}
+        category = f"{self.region_code}_{self.chart_type}"
+        print(f"[*] Scraping {category} charts...")
         try:
             response = requests.get(self.base_url, headers=headers, timeout=15)
-            response.raise_for_status()
             soup = BeautifulSoup(response.text, 'html.parser')
-            
-            # Kworb table structure: the main data table
             table = soup.find('table', {'class': 'sortable'})
-            if not table:
-                print("[!] Could not find the chart table.")
-                return False
-
-            rows = table.find_all('tr')[1:201] # Get top 200
+            if not table: return False
+            rows = table.find_all('tr')[1:101] # Top 100 for variety
             
             today_str = datetime.now().strftime('%Y-%m-%d')
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
-
-            count = 0
             for row in rows:
                 cols = row.find_all('td')
                 if len(cols) < 5: continue
-                
                 pos = int(cols[0].text.strip())
-                # Artist - Track format
                 full_name = cols[2].text.strip()
-                if " - " in full_name:
-                    artist, track = full_name.split(" - ", 1)
-                else:
-                    artist, track = "Unknown", full_name
-                
-                # Streams often contain commas
-                streams_text = cols[5].text.strip().replace(',', '')
-                try:
-                    streams = int(streams_text)
-                except ValueError:
-                    streams = 0
-
-                # Insert into DB
-                try:
-                    cursor.execute('''
-                        INSERT OR REPLACE INTO spotify_charts (date, region, position, track_name, artist, streams)
-                        VALUES (?, ?, ?, ?, ?, ?)
-                    ''', (today_str, self.region_code, pos, track, artist, streams))
-                    count += 1
-                except Exception as e:
-                    print(f"Error inserting row: {e}")
-
+                artist, track = full_name.split(" - ", 1) if " - " in full_name else ("Unknown", full_name)
+                streams = int(cols[5].text.strip().replace(',', '')) if len(cols)>5 else 0
+                cursor.execute('''
+                    INSERT OR REPLACE INTO spotify_charts (date, region, position, track_name, artist, streams)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                ''', (today_str, category, pos, track, artist, streams))
             conn.commit()
             conn.close()
-            print(f"[+] Successfully saved {count} tracks to database.")
             return True
-
         except Exception as e:
-            print(f"[!] Error during scraping: {e}")
+            print(f"Error scrape {category}: {e}")
             return False
 
 if __name__ == "__main__":

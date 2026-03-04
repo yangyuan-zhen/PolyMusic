@@ -35,47 +35,50 @@ def send_telegram_message(text):
 
 def run_quant_report(market_context):
     """
-    Run a full quant analysis for a given market.
+    运行完整的市场量化分析报告。
     """
     print(f"--- PolyMusic Report for: {market_context} ---")
     
-    # 1. Fetch Real Data from Spotify (Kworb)
-    scanner = SpotifyScanner(region='global')
-    scanner.fetch_and_save()
+    # 1. 抓取多维度数据
+    # Global Daily
+    SpotifyScanner(region='global', chart_type='daily').fetch_and_save()
+    # US Daily
+    SpotifyScanner(region='us', chart_type='daily').fetch_and_save()
+    # Global Weekly
+    SpotifyScanner(region='global', chart_type='weekly').fetch_and_save()
+    # US Weekly
+    SpotifyScanner(region='us', chart_type='weekly').fetch_and_save()
+    # Top Artists
+    SpotifyScanner().fetch_artists()
     
-    # 2. Extract Data for Analysis
-    conn = sqlite3.connect(scanner.db_path)
+    # 2. 提取分析数据 (以全球周榜为例)
+    conn = sqlite3.connect(os.path.join(os.path.dirname(__file__), 'data/polymusic.db'))
     cursor = conn.cursor()
-    cursor.execute("SELECT track_name, artist, streams FROM spotify_charts WHERE position <= 3 ORDER BY position ASC")
+    cursor.execute("SELECT track_name, artist, streams FROM spotify_charts WHERE region = 'ww_weekly' AND position <= 3 ORDER BY position ASC")
     top_3 = cursor.fetchall()
     conn.close()
     
-    spotify_summary = "\n".join([f"#{i+1}: {r[0]} by {r[1]} ({r[2]:,} streams)" for i, r in enumerate(top_3)])
-    print(f"[*] Top 3 Analysis:\n{spotify_summary}")
+    spotify_summary = "\n".join([f"第{i+1}名: {r[0]} - {r[1]} ({r[2]:,} 流值)" for i, r in enumerate(top_3)])
+    print(f"[*] Top 3 周榜分析:\n{spotify_summary}")
 
-    # 3. Accumulation Analysis (Example: Top 1 vs Top 2)
+    # 3. 积分缺口分析
     if len(top_3) >= 2:
         leader_streams = top_3[0][2]
         contender_streams = top_3[1][2]
-        # Mocking weekly gap: current day 4 of 7
-        solver = AccumulationSolver(leader_streams * 7, contender_streams * 4, 3)
+        solver = AccumulationSolver(leader_streams, contender_streams, 3)
         gap = solver.calculate_gap()
-        print(f"Accumulation Gap: {gap:,.0f} daily streams needed to flip Top 1.")
+        print(f"积分缺口: 每日需 {gap:,.0f} 流值即可反超。")
     
-    # 4. AI Insights
+    # 4. AI 深度解读
     ai_engine = MusicDecisionEngine()
-    viral_signals = "TikTok Growth: Stable on Top 1, High acceleration on Top 3 bridge snippet"
-    event_context = "SNL Performance pending for Top 2 Artist"
+    viral_signals = "TikTok 增长：第一名稳定，第三名副歌片段爆发式增长"
+    event_context = "第二名艺人本周末有 SNL 表演预热"
     
     try:
         analysis = ai_engine.generate_analysis(spotify_summary, viral_signals, event_context)
-        print("\n--- AI QUANT ANALYSIS ---")
-        print(analysis)
-        
-        # 5. Push to Telegram
-        tg_text = f"🎵 *PolyMusic Report: {market_context}*\n\n{analysis}"
+        # 5. 推送至电报
+        tg_text = f"🎵 *PolyMusic 市场量化报告: {market_context}*\n\n{analysis}"
         send_telegram_message(tg_text)
-        
     except Exception as e:
         print(f"\nAI Engine Error: {e}")
 

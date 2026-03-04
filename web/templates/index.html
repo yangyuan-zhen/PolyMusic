@@ -17,77 +17,79 @@
                 <h1>PolyMusic</h1>
             </div>
             <nav>
-                <span class="status pulse">LIVE ANALYSIS</span>
+                <span class="status pulse">实时量化中</span>
             </nav>
         </header>
 
         <main>
             <section class="hero">
-                <div class="badge">Market Quant Intelligence</div>
-                <h2>Music Prediction Dashboard</h2>
-                <p>Aggregating real-time streaming data and social signals for accurate market edge.</p>
+                <div class="badge">市场博弈情报系统</div>
+                <h2>音乐预测市场量化看板</h2>
+                <p>聚合 Spotify 实时流值与社交媒体前沿信号，捕捉博弈偏差。</p>
             </section>
 
             <div class="grid">
                 <div class="card chart-card">
-                    <h3>Spotify Top 200 (Latest)</h3>
-                    <div class="table-container">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Pos</th>
-                                    <th>Track</th>
-                                    <th>Artist</th>
-                                    <th>Streams (Est.)</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% if charts %}
-                                {% for row in charts %}
-                                <tr>
-                                    <td>{{ row[4] }}</td>
-                                    <td class="track-name">{{ row[1] }}</td>
-                                    <td>{{ row[2] }}</td>
-                                    <td class="streams">
-                                        {% if row[3] %}
-                                        {{ "{:,}".format(row[3]) }}
-                                        {% else %}
-                                        --
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                                {% else %}
-                                <tr>
-                                    <td colspan="4" class="empty">Scanning for data...</td>
-                                </tr>
-                                {% endif %}
-                            </tbody>
-                        </table>
+                    {% for cat_name, rows in charts.items() %}
+                    <div class="chart-section" style="margin-bottom: 2rem;">
+                        <h3 style="margin-bottom: 1rem;">{{ cat_name }}</h3>
+                        <div class="table-container">
+                            <table style="margin-bottom: 1.5rem;">
+                                <thead>
+                                    <tr>
+                                        <th>排名</th>
+                                        <th>内容 / 艺人</th>
+                                        <th>艺人 / 信息</th>
+                                        <th>流值 (估算)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% if rows %}
+                                    {% for row in rows %}
+                                    <tr>
+                                        <td>{{ row[0] if row[0] != 0 else '-' }}</td>
+                                        <td class="track-name">{{ row[1] if row[1] != 'ARTIST_ENTRY' else row[2] }}</td>
+                                        <td>{{ row[2] if row[1] != 'ARTIST_ENTRY' else '热门艺人' }}</td>
+                                        <td class="streams">
+                                            {% if row[3] %}
+                                            {{ "{:,}".format(row[3]) }}
+                                            {% else %}
+                                            --
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                    {% else %}
+                                    <tr>
+                                        <td colspan="4" class="empty">数据扫描中...请稍后刷新</td>
+                                    </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
+                    {% endfor %}
                 </div>
 
                 <div class="side-panel">
                     <div class="card quant-card">
-                        <h3>Quant Indicators</h3>
+                        <h3>量化指标</h3>
                         <div class="indicator">
-                            <span>Weekly Overtake Potential</span>
+                            <span>周榜反超潜力 (Flip Potential)</span>
                             <div class="progress-bar">
                                 <div class="fill" style="width: 75%"></div>
                             </div>
                         </div>
                         <div class="indicator">
-                            <span>Viral Momentum</span>
+                            <span>社交媒体动能 (Momentum)</span>
                             <div class="value positive">+12.4%</div>
                         </div>
                     </div>
 
                     <div class="card ai-card">
-                        <h3>AI Market Insight</h3>
-                        <p class="ai-text">Current markets show undervaluation in long-tail hits with high TikTok
-                            velocity. LLaMA recommended: Accumulate 'Contender' assets before Thursday's peak signal.
-                        </p>
-                        <div class="confidence">Confidence: 88%</div>
+                        <h3>AI 市场洞察</h3>
+                        <p class="ai-text">当前市场对美国区周榜的增长预估不足。LLaMA 建议：在周四信号见顶前提前布局非热门艺人的突破性单曲。</p>
+                        <div class="confidence">置信度: 88%</div>
                     </div>
                 </div>
             </div>
