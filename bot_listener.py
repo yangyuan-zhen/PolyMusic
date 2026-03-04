@@ -82,10 +82,19 @@ def run_quant_report(market_context):
     except Exception as e:
         print(f"\nAI Engine Error: {e}")
 
+import time
+
 if __name__ == "__main__":
     # Ensure DB is ready
-    if not os.path.exists("./data/polymusic.db"):
-        init_db()
+    init_db()
+    
+    while True:
+        try:
+            # Example Market
+            run_quant_report("Billboard Hot 100 Week of March 6")
+        except Exception as e:
+            print(f"[!] Critical error in main loop: {e}")
         
-    # Example Market
-    run_quant_report("Billboard Hot 100 Week of March 6")
+        # 每天抓取并更新 4 次 (每 6 小时)
+        print("[*] Waiting 6 hours for next update...")
+        time.sleep(6 * 3600)

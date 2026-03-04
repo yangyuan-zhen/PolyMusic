@@ -25,5 +25,5 @@ COPY . .
 # Create data directory for SQLite
 RUN mkdir -p data
 
-# Use a simple wrapper to run both background tasks and the web server
-CMD ["sh", "-c", "python bot_listener.py & exec python web/main.py"]
+# Start bot in background and web server in foreground
+CMD python bot_listener.py & uvicorn web.main:app --host 0.0.0.0 --port 8000
