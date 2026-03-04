@@ -7,8 +7,31 @@ from src.ai.prompt_engine import MusicDecisionEngine
 
 from src.data.spotify import SpotifyScanner
 import sqlite3
+import requests
 
 load_dotenv()
+
+def send_telegram_message(text):
+    """
+    Sends a message to the configured Telegram chat.
+    """
+    token = os.getenv("TELEGRAM_BOT_TOKEN")
+    chat_id = os.getenv("TELEGRAM_CHAT_ID")
+    if not token or not chat_id:
+        print("[!] Telegram config missing.")
+        return
+    
+    url = f"https://api.telegram.org/bot{token}/sendMessage"
+    payload = {
+        "chat_id": chat_id,
+        "text": text,
+        "parse_mode": "Markdown"
+    }
+    try:
+        requests.post(url, json=payload, timeout=10)
+        print("[+] Telegram notification sent.")
+    except Exception as e:
+        print(f"[!] Failed to send Telegram: {e}")
 
 def run_quant_report(market_context):
     """
@@ -48,6 +71,11 @@ def run_quant_report(market_context):
         analysis = ai_engine.generate_analysis(spotify_summary, viral_signals, event_context)
         print("\n--- AI QUANT ANALYSIS ---")
         print(analysis)
+        
+        # 5. Push to Telegram
+        tg_text = f"🎵 *PolyMusic Report: {market_context}*\n\n{analysis}"
+        send_telegram_message(tg_text)
+        
     except Exception as e:
         print(f"\nAI Engine Error: {e}")
 
