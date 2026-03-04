@@ -1,120 +1,151 @@
 import os
 import sys
+import time
+import sqlite3
 from dotenv import load_dotenv
 from src.data.database import init_db
+from src.data.spotify import SpotifyScanner
 from src.analysis.accumulation import AccumulationSolver
 from src.ai.prompt_engine import MusicDecisionEngine
-
-from src.data.spotify import SpotifyScanner
-import sqlite3
 import requests
 
 load_dotenv()
 
+
 def send_telegram_message(text):
-    """
-    Sends a message to the configured Telegram chat.
-    """
+    """推送消息到 Telegram"""
     token = os.getenv("TELEGRAM_BOT_TOKEN")
     chat_id = os.getenv("TELEGRAM_CHAT_ID")
     if not token or not chat_id:
-        print("[!] Telegram config missing.")
+        print("[!] Telegram 配置缺失", flush=True)
         return
-    
     url = f"https://api.telegram.org/bot{token}/sendMessage"
-    payload = {
-        "chat_id": chat_id,
-        "text": text,
-        "parse_mode": "Markdown"
-    }
+    payload = {"chat_id": chat_id, "text": text, "parse_mode": "Markdown"}
     try:
         requests.post(url, json=payload, timeout=10)
-        print("[+] Telegram notification sent.")
+        print("[+] Telegram 推送成功", flush=True)
     except Exception as e:
-        print(f"[!] Failed to send Telegram: {e}")
+        print(f"[!] Telegram 推送失败: {e}", flush=True)
 
-from concurrent.futures import ThreadPoolExecutor
 
-def run_quant_report(market_context):
-    """
-    运行完整的市场量化分析报告（并行抓取版）。
-    """
-    print(f"--- PolyMusic 并行抓取启动: {market_context} ---", flush=True)
-    
-    # 获取绝对路径，防止目录混淆
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    db_path = os.path.join(base_dir, 'data', 'polymusic.db')
-    
-    # 1. 定义抓取任务
-    scanners = [
-        SpotifyScanner(region='global', chart_type='daily'),
-        SpotifyScanner(region='us', chart_type='daily'),
-        SpotifyScanner(region='global', chart_type='weekly'),
-        SpotifyScanner(region='us', chart_type='weekly')
-    ]
-    
-    # 2. 并行执行抓取
-    start_time = time.time()
-    print("[*] 正在并行抓取 5 个榜单维度...", flush=True)
-    with ThreadPoolExecutor(max_workers=5) as executor:
-        futures = [executor.submit(s.fetch_and_save) for s in scanners]
-        futures.append(executor.submit(SpotifyScanner().fetch_artists))
-        
-        for future in futures:
-            try:
-                future.result()
-            except Exception as e:
-                print(f"[!] 某个抓取线程执行出错: {e}", flush=True)
-            
-    print(f"[*] 所有数据抓取及入库完成，耗时: {time.time() - start_time:.2f}秒", flush=True)
-    
-    # 3. 提取分析数据
+def get_market_data():
+    """从数据库读取 5 大市场数据"""
+    db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data/polymusic.db')
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
-    cursor.execute("SELECT track_name, artist, streams FROM spotify_charts WHERE region = 'ww_weekly' AND position <= 3 ORDER BY position ASC")
-    top_3 = cursor.fetchall()
+
+    data = {}
+
+    # 市场 2: 全球周榜歌曲
+    cursor.execute("""
+        SELECT position, track_name, artist, streams 
+        FROM spotify_charts WHERE region = 'weekly_song_ww' 
+        ORDER BY position ASC LIMIT 10
+    """)
+    data['global_weekly'] = cursor.fetchall()
+
+    # 市场 3: 美国周榜歌曲
+    cursor.execute("""
+        SELECT position, track_name, artist, streams 
+        FROM spotify_charts WHERE region = 'weekly_song_us' 
+        ORDER BY position ASC LIMIT 10
+    """)
+    data['us_weekly'] = cursor.fetchall()
+
+    # 市场 1, 4, 5: 艺人排名
+    cursor.execute("""
+        SELECT position, track_name, artist, streams 
+        FROM spotify_charts WHERE region = 'top_artists' 
+        ORDER BY position ASC LIMIT 20
+    """)
+    data['artists'] = cursor.fetchall()
+
     conn.close()
-    
-    spotify_summary = "\n".join([f"第{i+1}名: {r[0]} - {r[1]} ({r[2]:,} 流值)" for i, r in enumerate(top_3)])
-    print(f"[*] Top 3 周榜分析:\n{spotify_summary}")
+    return data
 
-    # 3. 针对 3月6日 周五结算市场的专项量化
-    if len(top_3) >= 2:
-        leader_streams = top_3[0][2]
-        contender_streams = top_3[1][2]
-        # 假设今天是周三，距离周五结算还有约 2 天
-        solver = AccumulationSolver(leader_streams, contender_streams, 2)
-        gap = solver.calculate_gap()
-        
-        analysis_text = f"🚨 *3月6日结算情报*:\n第一名: {top_3[0][0]}\n第二名: {top_3[1][0]}\n反超缺口: 每日需追回 {gap:,.0f} 流值。"
-        print(analysis_text, flush=True)
-        
-        # 4. AI 深度解读 (专门针对 3月6日 结算)
-        ai_engine = MusicDecisionEngine()
-        spotify_summary = f"目标市场：Spotify Global Weekly (March 6)\n数据：{top_3[0][0]} ({top_3[0][2]:,} total) vs {top_3[1][0]} ({top_3[1][2]:,} total)"
-        viral_signals = "TikTok 数据显示第二名在周三下午有明显突破迹象"
-        event_context = "Resolution Date: Mar 6. Market Source: Spotify Official."
-        
+
+def run_market_analysis():
+    """运行 5 大博弈市场分析"""
+    print("\n🎯 PolyMusic 博弈情报系统启动", flush=True)
+    print("=" * 50, flush=True)
+
+    # 1. 抓取数据
+    scanner = SpotifyScanner()
+    scanner.fetch_all_markets()
+
+    # 2. 读取数据
+    data = get_market_data()
+
+    # 3. 构建情报
+    report_lines = ["🏆 *PolyMusic 博弈情报*\n"]
+
+    # --- 市场 2: 全球周榜 #1 ---
+    report_lines.append("*📀 市场: #1 Song Global (March 6)*")
+    if data['global_weekly']:
+        for row in data['global_weekly'][:5]:
+            pos, track, artist, streams = row
+            s = f"{streams:,}" if streams else "N/A"
+            report_lines.append(f"  #{pos} {track} - {artist} ({s})")
+    else:
+        report_lines.append("  暂无数据")
+
+    # --- 市场 3: 美国周榜 #1 ---
+    report_lines.append("\n*🇺🇸 市场: #1 Song US (March 6)*")
+    if data['us_weekly']:
+        for row in data['us_weekly'][:5]:
+            pos, track, artist, streams = row
+            s = f"{streams:,}" if streams else "N/A"
+            report_lines.append(f"  #{pos} {track} - {artist} ({s})")
+    else:
+        report_lines.append("  暂无数据")
+
+    # --- 市场 1, 4, 5: 艺人排名 ---
+    report_lines.append("\n*🎤 市场: Top Artist 2026 / March #1 / March #2*")
+    if data['artists']:
+        for row in data['artists'][:10]:
+            pos, daily_info, name, total = row
+            s = f"{total:,}" if total else "N/A"
+            report_lines.append(f"  #{pos} {name} ({s})")
+    else:
+        report_lines.append("  暂无数据")
+
+    report_text = "\n".join(report_lines)
+    print(report_text, flush=True)
+
+    # 4. 推送 Telegram
+    send_telegram_message(report_text)
+
+    # 5. AI 分析 (如果有数据)
+    if data['global_weekly'] and data['artists']:
         try:
-            analysis = ai_engine.generate_analysis(spotify_summary, viral_signals, event_context)
-            tg_text = f"🏆 *PolyMusic 博弈情报 (目标: 3月6日)*\n\n{analysis_text}\n\n*AI 建议*:\n{analysis}"
-            send_telegram_message(tg_text)
+            ai_engine = MusicDecisionEngine()
+            context = f"""
+目标: Polymarket 5 大音乐市场博弈分析
+全球周榜 Top 3: {data['global_weekly'][:3]}
+美国周榜 Top 3: {data['us_weekly'][:3]}
+艺人 Top 5: {data['artists'][:5]}
+当前市场赔率:
+- 全球周榜#1: 85% Stateside+Zara Larsson
+- 美国周榜#1: 5% Stateside+Zara Larsson  
+- 年度艺人: 57% Bad Bunny
+- 3月艺人#1: 93% Bruno Mars
+- 3月艺人#2: 59% The Weeknd
+"""
+            analysis = ai_engine.generate_analysis(context, "Polymarket赔率数据", "结算日: March 6 (周榜), March 31 (月度)")
+            ai_report = f"\n\n🤖 *AI 博弈建议*:\n{analysis}"
+            send_telegram_message(ai_report)
         except Exception as e:
-            print(f"AI Error: {e}", flush=True)
+            print(f"[!] AI 分析异常: {e}", flush=True)
 
-import time
 
 if __name__ == "__main__":
-    # Ensure DB is ready
     init_db()
-    
+
     while True:
         try:
-            # Example Market
-            run_quant_report("3月6日 Spotify 全球周榜 结算博弈")
+            run_market_analysis()
         except Exception as e:
-            print(f"[!] Critical error in main loop: {e}")
-        
-        # 每天抓取并更新 4 次 (每 6 小时)
-        print("[*] Waiting 6 hours for next update...")
+            print(f"[!] 主循环异常: {e}", flush=True)
+
+        print("\n⏰ 等待 6 小时后下次更新...", flush=True)
         time.sleep(6 * 3600)

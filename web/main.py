@@ -8,48 +8,63 @@ from src.data.database import init_db
 
 app = FastAPI()
 
-# Ensure DB and tables exist on startup
+# 启动时初始化数据库
 init_db()
 
-# Setup templates and static files
-# We'll use a simple structure for now, injecting into the 'web' folder
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
 
 DB_PATH = os.path.join(BASE_DIR, "../data/polymusic.db")
 
-def get_db_data():
+
+def get_market_data():
+    """获取 5 大博弈市场数据"""
     if not os.path.exists(DB_PATH):
         return {}
+
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    
-    charts = {}
-    # Fetch different categories
-    categories = {
-        'ww_daily': '全球日榜',
-        'us_daily': '美国日榜',
-        'ww_weekly': '全球周榜',
-        'us_weekly': '美国周榜',
-        'top_artist': '热门艺人'
-    }
-    
-    for cat_id, cat_name in categories.items():
-        cursor.execute("SELECT position, track_name, artist, streams FROM spotify_charts WHERE region = ? ORDER BY position ASC LIMIT 10", (cat_id,))
-        charts[cat_name] = cursor.fetchall()
-        
+
+    markets = {}
+
+    # 市场 2: 全球周榜
+    cursor.execute("""
+        SELECT position, track_name, artist, streams 
+        FROM spotify_charts WHERE region = 'weekly_song_ww' 
+        ORDER BY position ASC LIMIT 10
+    """)
+    markets['global_weekly'] = cursor.fetchall()
+
+    # 市场 3: 美国周榜
+    cursor.execute("""
+        SELECT position, track_name, artist, streams 
+        FROM spotify_charts WHERE region = 'weekly_song_us' 
+        ORDER BY position ASC LIMIT 10
+    """)
+    markets['us_weekly'] = cursor.fetchall()
+
+    # 市场 1, 4, 5: 艺人
+    cursor.execute("""
+        SELECT position, track_name, artist, streams 
+        FROM spotify_charts WHERE region = 'top_artists' 
+        ORDER BY position ASC LIMIT 20
+    """)
+    markets['artists'] = cursor.fetchall()
+
     conn.close()
-    return charts
+    return markets
+
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
-    data = get_db_data()
+    data = get_market_data()
     return templates.TemplateResponse("index.html", {
         "request": request,
-        "title": "PolyMusic 音乐市场量化分析",
-        "charts": data
+        "title": "PolyMusic 博弈情报系统",
+        "markets": data
     })
+
 
 if __name__ == "__main__":
     import uvicorn

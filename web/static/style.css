@@ -2,9 +2,12 @@
   --bg-dark: #0a0a0c;
   --card-bg: rgba(255, 255, 255, 0.05);
   --accent: #1db954; /* Spotify Green */
+  --accent-gold: #ffd700;
+  --accent-silver: #c0c0c0;
   --text: #ffffff;
   --text-dim: #a0a0a0;
   --border: rgba(255, 255, 255, 0.1);
+  --highlight-bg: rgba(29, 185, 84, 0.1);
 }
 
 * {
@@ -42,7 +45,7 @@ body {
 }
 
 .glass-container {
-  max-width: 1200px;
+  max-width: 1300px;
   margin: 0 auto;
   padding: 2rem;
 }
@@ -51,7 +54,7 @@ header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 3rem;
+  margin-bottom: 2rem;
 }
 
 .logo {
@@ -93,7 +96,7 @@ header {
 }
 
 .hero {
-  margin-bottom: 3rem;
+  margin-bottom: 2rem;
   text-align: center;
 }
 
@@ -109,8 +112,8 @@ header {
 }
 
 .hero h2 {
-  font-size: 3rem;
-  margin-bottom: 1rem;
+  font-size: 2.5rem;
+  margin-bottom: 0.75rem;
   background: linear-gradient(90deg, #fff, #a0a0a0);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -122,7 +125,7 @@ header {
 
 .grid {
   display: grid;
-  grid-template-columns: 2fr 1fr;
+  grid-template-columns: 3fr 2fr;
   gap: 1.5rem;
 }
 
@@ -134,9 +137,44 @@ header {
   padding: 1.5rem;
 }
 
+/* 市场区域标题 */
+.market-section {
+  margin-bottom: 2rem;
+}
+
+.market-section:last-child {
+  margin-bottom: 0;
+}
+
+.market-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.market-header h3 {
+  font-size: 1rem;
+  margin-bottom: 0;
+  border-left: 3px solid var(--accent);
+  padding-left: 0.75rem;
+}
+
+.market-odds {
+  font-size: 0.75rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 15px;
+  background: rgba(255, 215, 0, 0.15);
+  color: var(--accent-gold);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  font-weight: 600;
+}
+
 h3 {
-  font-size: 1.1rem;
-  margin-bottom: 1.5rem;
+  font-size: 1rem;
+  margin-bottom: 1rem;
   border-left: 3px solid var(--accent);
   padding-left: 0.75rem;
 }
@@ -153,81 +191,134 @@ table {
 th {
   text-align: left;
   color: var(--text-dim);
-  font-size: 0.8rem;
-  padding-bottom: 1rem;
+  font-size: 0.75rem;
+  padding-bottom: 0.75rem;
   border-bottom: 1px solid var(--border);
 }
 
 td {
-  padding: 1rem 0;
+  padding: 0.6rem 0;
   border-bottom: 1px solid var(--border);
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 
 .track-name {
   font-weight: 600;
   color: #fff;
 }
+
 .streams {
   font-family: monospace;
+  color: var(--accent);
+}
+
+/* 高亮第一名 */
+tr.highlight {
+  background: var(--highlight-bg);
+}
+
+tr.highlight td {
+  font-weight: 700;
+}
+
+tr.highlight .track-name {
   color: var(--accent);
 }
 
 .side-panel {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
-.indicator {
-  margin-bottom: 1.5rem;
+/* 艺人列表 */
+.market-card {
+  padding: 1.2rem;
 }
 
-.indicator span {
-  display: block;
+.artist-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.artist-row {
+  display: flex;
+  align-items: center;
+  padding: 0.6rem 0.8rem;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.artist-row:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--border);
+}
+
+.artist-row .rank {
   font-size: 0.8rem;
   color: var(--text-dim);
-  margin-bottom: 0.5rem;
+  width: 2.5rem;
+  font-weight: 600;
 }
 
-.progress-bar {
-  height: 8px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
-  overflow: hidden;
+.artist-row .name {
+  flex: 1;
+  font-weight: 600;
+  font-size: 0.9rem;
 }
 
-.fill {
-  height: 100%;
-  background: var(--accent);
-}
-
-.value.positive {
-  font-size: 1.5rem;
-  font-weight: 800;
+.artist-row .total {
+  font-family: monospace;
+  font-size: 0.8rem;
   color: var(--accent);
 }
 
-.ai-text {
-  font-size: 0.9rem;
-  line-height: 1.6;
+/* 第一名高亮 */
+.artist-row.top-artist {
+  background: var(--highlight-bg);
+  border-color: rgba(29, 185, 84, 0.3);
+}
+
+.artist-row.top-artist .name {
+  color: var(--accent);
+}
+
+.artist-row.top-artist .rank {
+  color: var(--accent-gold);
+}
+
+/* 第二名高亮 */
+.artist-row.second-artist {
+  background: rgba(192, 192, 192, 0.08);
+  border-color: rgba(192, 192, 192, 0.2);
+}
+
+.artist-row.second-artist .name {
+  color: var(--accent-silver);
+}
+
+.artist-row.second-artist .rank {
+  color: var(--accent-silver);
+}
+
+.empty {
+  text-align: center;
   color: var(--text-dim);
   font-style: italic;
-  margin-bottom: 1.5rem;
-  background: rgba(255, 255, 255, 0.02);
   padding: 1rem;
-  border-radius: 10px;
-}
-
-.confidence {
-  text-align: right;
-  font-size: 0.8rem;
-  color: var(--accent);
-  font-weight: 600;
 }
 
 @media (max-width: 900px) {
   .grid {
     grid-template-columns: 1fr;
+  }
+  .hero h2 {
+    font-size: 1.8rem;
+  }
+  .market-header {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
