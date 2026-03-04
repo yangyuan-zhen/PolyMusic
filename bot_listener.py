@@ -5,7 +5,6 @@ import sqlite3
 from dotenv import load_dotenv
 from src.data.database import init_db
 from src.data.spotify import HybridSpotifyScanner
-from src.ai.prompt_engine import MusicDecisionEngine
 import requests
 
 load_dotenv()
@@ -70,15 +69,7 @@ def run_market_analysis():
     
     # 获取数据即可，不发送普通博弈报告
     
-    # 发送给 AI 深入解读
-    if data['monthly_rank']:
-        try:
-            ai_engine = MusicDecisionEngine()
-            context = f"Top Monthly: {data['monthly_rank'][:3]}, Top Weekly US: {data['us_weekly'][:3]}"
-            analysis = ai_engine.generate_analysis(context, "Polymarket March Artist Market", "Resolution: March 31")
-            send_telegram_message(f"🤖 *AI 分析建议*:\n{analysis}")
-        except Exception as e:
-            print(f"AI Error: {e}", flush=True)
+    # 纯数据爬取不发送 Telegram 通知
 
 if __name__ == "__main__":
     init_db()
