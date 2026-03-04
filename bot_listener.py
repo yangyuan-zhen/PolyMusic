@@ -78,26 +78,29 @@ def run_quant_report(market_context):
     spotify_summary = "\n".join([f"第{i+1}名: {r[0]} - {r[1]} ({r[2]:,} 流值)" for i, r in enumerate(top_3)])
     print(f"[*] Top 3 周榜分析:\n{spotify_summary}")
 
-    # 3. 积分缺口分析
+    # 3. 针对 3月6日 周五结算市场的专项量化
     if len(top_3) >= 2:
         leader_streams = top_3[0][2]
         contender_streams = top_3[1][2]
-        solver = AccumulationSolver(leader_streams, contender_streams, 3)
+        # 假设今天是周三，距离周五结算还有约 2 天
+        solver = AccumulationSolver(leader_streams, contender_streams, 2)
         gap = solver.calculate_gap()
-        print(f"积分缺口: 每日需 {gap:,.0f} 流值即可反超。")
-    
-    # 4. AI 深度解读
-    ai_engine = MusicDecisionEngine()
-    viral_signals = "TikTok 增长：第一名稳定，第三名副歌片段爆发式增长"
-    event_context = "第二名艺人本周末有 SNL 表演预热"
-    
-    try:
-        analysis = ai_engine.generate_analysis(spotify_summary, viral_signals, event_context)
-        # 5. 推送至电报
-        tg_text = f"🎵 *PolyMusic 市场量化报告: {market_context}*\n\n{analysis}"
-        send_telegram_message(tg_text)
-    except Exception as e:
-        print(f"\nAI Engine Error: {e}")
+        
+        analysis_text = f"🚨 *3月6日结算情报*:\n第一名: {top_3[0][0]}\n第二名: {top_3[1][0]}\n反超缺口: 每日需追回 {gap:,.0f} 流值。"
+        print(analysis_text, flush=True)
+        
+        # 4. AI 深度解读 (专门针对 3月6日 结算)
+        ai_engine = MusicDecisionEngine()
+        spotify_summary = f"目标市场：Spotify Global Weekly (March 6)\n数据：{top_3[0][0]} ({top_3[0][2]:,} total) vs {top_3[1][0]} ({top_3[1][2]:,} total)"
+        viral_signals = "TikTok 数据显示第二名在周三下午有明显突破迹象"
+        event_context = "Resolution Date: Mar 6. Market Source: Spotify Official."
+        
+        try:
+            analysis = ai_engine.generate_analysis(spotify_summary, viral_signals, event_context)
+            tg_text = f"🏆 *PolyMusic 博弈情报 (目标: 3月6日)*\n\n{analysis_text}\n\n*AI 建议*:\n{analysis}"
+            send_telegram_message(tg_text)
+        except Exception as e:
+            print(f"AI Error: {e}", flush=True)
 
 import time
 
@@ -108,7 +111,7 @@ if __name__ == "__main__":
     while True:
         try:
             # Example Market
-            run_quant_report("Billboard Hot 100 Week of March 6")
+            run_quant_report("3月6日 Spotify 全球周榜 结算博弈")
         except Exception as e:
             print(f"[!] Critical error in main loop: {e}")
         
