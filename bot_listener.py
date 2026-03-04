@@ -68,38 +68,8 @@ def run_market_analysis():
 
     data = get_market_data()
     
-    # Debug print some values to log
-    print(f"DEBUG: Global Weekly Top: {data['global_weekly'][:2] if data['global_weekly'] else 'EMPTY'}", flush=True)
-    print(f"DEBUG: US Weekly Top: {data['us_weekly'][:2] if data['us_weekly'] else 'EMPTY'}", flush=True)
-    print(f"DEBUG: Monthly Rank: {data['monthly_rank'][:2] if data['monthly_rank'] else 'EMPTY'}", flush=True)
-    print(f"DEBUG: Total Rank: {data['total_rank'][:2] if data['total_rank'] else 'EMPTY'}", flush=True)
-    report = ["🏆 *PolyMusic 精准博弈报告*\n"]
-
-    # 全球歌曲市场分析
-    if data['global_weekly']:
-        leader = data['global_weekly'][0]
-        report.append(f"*📊 #1 Song Global (Mar 6)*: {leader[2]} - {leader[1]} ({leader[3]:,} streams/week)")
-
-    # 美国歌曲市场分析
-    if data['us_weekly']:
-        leader = data['us_weekly'][0]
-        report.append(f"*🇺🇸 #1 Song US (Mar 6)*: {leader[2]} - {leader[1]} ({leader[3]:,} streams/week)")
-
-    # 3月艺人市场分析
-    if data['monthly_rank']:
-        m1 = data['monthly_rank'][0]
-        m2 = data['monthly_rank'][1]
-        report.append(f"\n*👑 Top Artist March:* #1 {m1[1]} ({m1[2]:,}), #2 {m2[1]} ({m2[2]:,})")
-
-    # 2026 艺人市场分析
-    if data['total_rank']:
-        t1 = data['total_rank'][0]
-        report.append(f"*🎤 2026 Top Artist Total:* #1 {t1[1]} ({t1[2]:,} total)")
-
-    report_text = "\n".join(report)
-    print(report_text, flush=True)
-    send_telegram_message(report_text)
-
+    # 获取数据即可，不发送普通博弈报告
+    
     # 发送给 AI 深入解读
     if data['monthly_rank']:
         try:
