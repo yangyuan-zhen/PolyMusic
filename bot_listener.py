@@ -4,7 +4,7 @@ import time
 import sqlite3
 from dotenv import load_dotenv
 from src.data.database import init_db
-from src.data.spotify import SpotifyScanner
+from src.data.spotify import HybridSpotifyScanner
 from src.ai.prompt_engine import MusicDecisionEngine
 import requests
 
@@ -63,7 +63,7 @@ def get_market_data():
 
 def run_market_analysis():
     print("\n🎯 开始抓取精准博弈数据...", flush=True)
-    scanner = SpotifyScanner()
+    scanner = HybridSpotifyScanner()
     scanner.fetch_all_markets()
 
     data = get_market_data()
