@@ -42,6 +42,7 @@ class HybridSpotifyScanner:
         try:
             url = f"https://charts.spotify.com/charts/view/regional-{region_code}-weekly/latest"
             res = requests.get(url, headers=self.headers, timeout=15)
+            res.encoding = 'utf-8'
             
             if res.status_code != 200:
                 print(f"[!] 官方页面访问失败 ({res.status_code})。尝试备用解析方案...", flush=True)
@@ -104,6 +105,7 @@ class HybridSpotifyScanner:
         url = f"https://kworb.net/spotify/country/{region_code}_weekly.html"
         try:
             res = requests.get(url, headers=self.headers, timeout=15)
+            res.encoding = 'utf-8'
             soup = BeautifulSoup(res.text, 'html.parser')
             table = soup.find('table', {'class': 'sortable'})
             if not table: return False
@@ -153,6 +155,7 @@ class HybridSpotifyScanner:
         print("[*] 从 Kworb 抓取月度听众 (Polymarket 标准)...", flush=True)
         try:
             res = requests.get(url, headers=self.headers, timeout=15)
+            res.encoding = 'utf-8'
             soup = BeautifulSoup(res.text, 'html.parser')
             table = soup.find('table', {'class': 'sortable'})
             rows = table.find_all('tr')[1:21]
@@ -189,6 +192,7 @@ class HybridSpotifyScanner:
         print("[*] 从 Kworb 抓取艺人总榜...", flush=True)
         try:
             res = requests.get(url, headers=self.headers, timeout=15)
+            res.encoding = 'utf-8'
             soup = BeautifulSoup(res.text, 'html.parser')
             table = soup.find('table', {'class': 'sortable'})
             rows = table.find_all('tr')[1:21]
