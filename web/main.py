@@ -28,29 +28,33 @@ def get_market_data():
 
     markets = {}
 
-    # 市场 2: 全球周榜
+    # 1. 全球周榜 (March 6)
     cursor.execute("""
-        SELECT position, track_name, artist, streams 
-        FROM spotify_charts WHERE region = 'weekly_song_global' 
-        ORDER BY position ASC LIMIT 10
+        SELECT position, track_name, artist, streams FROM spotify_charts 
+        WHERE region = 'weekly_song_global' ORDER BY position ASC LIMIT 10
     """)
     markets['global_weekly'] = cursor.fetchall()
 
-    # 市场 3: 美国周榜
+    # 2. 美国周榜 (March 6)
     cursor.execute("""
-        SELECT position, track_name, artist, streams 
-        FROM spotify_charts WHERE region = 'weekly_song_us' 
-        ORDER BY position ASC LIMIT 10
+        SELECT position, track_name, artist, streams FROM spotify_charts 
+        WHERE region = 'weekly_song_us' ORDER BY position ASC LIMIT 10
     """)
     markets['us_weekly'] = cursor.fetchall()
 
-    # 市场 1, 4, 5: 艺人
+    # 3. 2026 年度艺人 (基于总流值)
     cursor.execute("""
-        SELECT position, track_name, artist, streams 
-        FROM spotify_charts WHERE region = 'top_artists' 
-        ORDER BY position ASC LIMIT 20
+        SELECT position, artist, streams FROM spotify_charts 
+        WHERE region = 'top_artists_total' ORDER BY position ASC LIMIT 10
     """)
-    markets['artists'] = cursor.fetchall()
+    markets['top_artists_total'] = cursor.fetchall()
+
+    # 4. 三月艺人排名 #1/#2 (基于月度听众)
+    cursor.execute("""
+        SELECT position, artist, streams FROM spotify_charts 
+        WHERE region = 'monthly_listeners' ORDER BY position ASC LIMIT 10
+    """)
+    markets['monthly_rank'] = cursor.fetchall()
 
     conn.close()
     return markets
@@ -61,7 +65,7 @@ async def read_root(request: Request):
     data = get_market_data()
     return templates.TemplateResponse("index.html", {
         "request": request,
-        "title": "PolyMusic 博弈情报系统",
+        "title": "PolyMusic 精准博弈系统",
         "markets": data
     })
 

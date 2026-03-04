@@ -17,26 +17,26 @@
                 <h1>PolyMusic</h1>
             </div>
             <nav>
-                <span class="status pulse">实时博弈情报</span>
+                <div class="status pulse">博弈精准博弈 · 已同步</div>
             </nav>
         </header>
 
         <main>
-            <section class="hero">
-                <div class="badge">Polymarket 音乐市场</div>
-                <h2>5 大博弈市场 · 量化情报看板</h2>
-                <p>精确追踪 Spotify 官方数据，为你的博弈决策提供实时依据。</p>
-            </section>
+            <div class="hero">
+                <div class="badge">Polymarket 音乐市场专项</div>
+                <h2>5 大博弈市场 · 精准量化看板</h2>
+                <p>自动追踪 Spotify 官方数据（周流值、月度听众、年度总流值），助你决策。</p>
+            </div>
 
             <div class="grid">
-                <!-- 左栏：歌曲市场 -->
+                <!-- 左侧：歌曲周榜 (March 6) -->
                 <div class="card chart-card">
 
-                    <!-- 市场 2: 全球周榜 #1 歌曲 -->
+                    <!-- #1 Song Global (Mar 6) -->
                     <div class="market-section">
                         <div class="market-header">
-                            <h3>📀 #1 Song on Spotify This Week? (March 6)</h3>
-                            <span class="market-odds">当前赔率: 85% Stateside+Zara Larsson</span>
+                            <h3>📀 #1 song on Spotify this week? (Mar 6)</h3>
+                            <span class="market-odds">赔率: 85% Stateside+Zara Larsson</span>
                         </div>
                         <div class="table-container">
                             <table>
@@ -45,7 +45,7 @@
                                         <th>排名</th>
                                         <th>歌曲</th>
                                         <th>艺人</th>
-                                        <th>周流值</th>
+                                        <th>周流值 (Weekly)</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -55,9 +55,7 @@
                                         <td>{{ row[0] }}</td>
                                         <td class="track-name">{{ row[1] }}</td>
                                         <td>{{ row[2] }}</td>
-                                        <td class="streams">
-                                            {% if row[3] %}{{ "{:,}".format(row[3]) }}{% else %}--{% endif %}
-                                        </td>
+                                        <td class="streams">{{ "{:,}".format(row[3]) if row[3] else '--' }}</td>
                                     </tr>
                                     {% endfor %}
                                     {% else %}
@@ -70,11 +68,11 @@
                         </div>
                     </div>
 
-                    <!-- 市场 3: 美国周榜 #1 歌曲 -->
+                    <!-- #1 Song US (Mar 6) -->
                     <div class="market-section">
                         <div class="market-header">
-                            <h3>🇺🇸 #1 Song on US Spotify This Week? (March 6)</h3>
-                            <span class="market-odds">当前赔率: 5% Stateside+Zara Larsson</span>
+                            <h3>🇺🇸 #1 song on US Spotify this week? (Mar 6)</h3>
+                            <span class="market-odds">赔率: 5% Stateside+Zara Larsson</span>
                         </div>
                         <div class="table-container">
                             <table>
@@ -83,7 +81,7 @@
                                         <th>排名</th>
                                         <th>歌曲</th>
                                         <th>艺人</th>
-                                        <th>周流值</th>
+                                        <th>周流值 (Weekly)</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -93,9 +91,7 @@
                                         <td>{{ row[0] }}</td>
                                         <td class="track-name">{{ row[1] }}</td>
                                         <td>{{ row[2] }}</td>
-                                        <td class="streams">
-                                            {% if row[3] %}{{ "{:,}".format(row[3]) }}{% else %}--{% endif %}
-                                        </td>
+                                        <td class="streams">{{ "{:,}".format(row[3]) if row[3] else '--' }}</td>
                                     </tr>
                                     {% endfor %}
                                     {% else %}
@@ -109,74 +105,68 @@
                     </div>
                 </div>
 
-                <!-- 右栏：艺人市场 -->
+                <!-- 右侧：艺人排名 -->
                 <div class="side-panel">
 
-                    <!-- 市场 1: 年度艺人 -->
+                    <!-- Top Spotify Artist 2026 (基于总流值) -->
                     <div class="card market-card">
                         <div class="market-header">
                             <h3>👑 Top Spotify Artist 2026</h3>
                             <span class="market-odds">赔率: 57% Bad Bunny</span>
                         </div>
                         <div class="artist-list">
-                            {% if markets.artists %}
-                            {% for row in markets.artists[:5] %}
+                            {% if markets.top_artists_total %}
+                            {% for row in markets.top_artists_total[:5] %}
                             <div class="artist-row {{ 'top-artist' if loop.index == 1 else '' }}">
                                 <span class="rank">#{{ row[0] }}</span>
-                                <span class="name">{{ row[2] }}</span>
-                                <span class="total">
-                                    {% if row[3] %}{{ "{:,}".format(row[3]) }}{% else %}--{% endif %}
-                                </span>
+                                <span class="name">{{ row[1] }}</span>
+                                <span class="total">{{ "{:,}".format(row[2]) if row[2] else '--' }} (Total)</span>
                             </div>
                             {% endfor %}
                             {% else %}
-                            <div class="empty">数据同步中...</div>
+                            <div class="empty">同步中...</div>
                             {% endif %}
                         </div>
                     </div>
 
-                    <!-- 市场 4: 三月艺人 #1 -->
+                    <!-- Top Spotify Artist in March? (基于月度听众) -->
                     <div class="card market-card">
                         <div class="market-header">
                             <h3>🥇 Top Spotify Artist in March?</h3>
-                            <span class="market-odds">赔率: 93% Bruno Mars</span>
+                            <span class="market-odds-blue">赔率: 93% Bruno Mars</span>
                         </div>
                         <div class="artist-list">
-                            {% if markets.artists %}
-                            {% for row in markets.artists[:3] %}
+                            {% if markets.monthly_rank %}
+                            {% for row in markets.monthly_rank[:5] %}
                             <div class="artist-row {{ 'top-artist' if loop.index == 1 else '' }}">
                                 <span class="rank">#{{ row[0] }}</span>
-                                <span class="name">{{ row[2] }}</span>
-                                <span class="total">
-                                    {% if row[3] %}{{ "{:,}".format(row[3]) }}{% else %}--{% endif %}
-                                </span>
+                                <span class="name">{{ row[1] }}</span>
+                                <span class="total">{{ "{:,}".format(row[2]) if row[2] else '--' }} (Monthly)</span>
                             </div>
                             {% endfor %}
                             {% else %}
-                            <div class="empty">数据同步中...</div>
+                            <div class="empty">同步中...</div>
                             {% endif %}
                         </div>
                     </div>
 
-                    <!-- 市场 5: 三月艺人 #2 -->
+                    <!-- #2 Spotify Artist in March? -->
                     <div class="card market-card">
                         <div class="market-header">
                             <h3>🥈 #2 Spotify Artist in March?</h3>
-                            <span class="market-odds">赔率: 59% The Weeknd</span>
+                            <span class="market-odds-blue">赔率: 59% The Weeknd</span>
                         </div>
                         <div class="artist-list">
-                            {% if markets.artists %}
-                            {% for row in markets.artists[:5] %}
+                            {% if markets.monthly_rank %}
+                            {% for row in markets.monthly_rank[:5] %}
                             <div class="artist-row {{ 'second-artist' if loop.index == 2 else '' }}">
                                 <span class="rank">#{{ row[0] }}</span>
-                                <span class="name">{{ row[2] }}</span>
-                                <span class="total">
-                                    {% if row[3] %}{{ "{:,}".format(row[3]) }}{% else %}--{% endif %}
-                                </span>
+                                <span class="name">{{ row[1] }}</span>
+                                <span class="total">{{ "{:,}".format(row[2]) if row[2] else '--' }}</span>
                             </div>
                             {% endfor %}
                             {% else %}
-                            <div class="empty">数据同步中...</div>
+                            <div class="empty">同步中...</div>
                             {% endif %}
                         </div>
                     </div>
